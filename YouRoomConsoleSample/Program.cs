@@ -49,8 +49,7 @@ namespace YouRoomConsoleSample
             var roomEntries = await client.GetRoomTimeline(firstRoom.ToParam);
 
             var oneEntry =
-                client.ShowEntryAsync(firstRoom.ToParam, roomEntries.First().Id)
-                    .Result;
+                await client.ShowEntryAsync(firstRoom.ToParam, roomEntries.First().Id);
 
             var entryWithPictureAttachment =
                 roomEntries
@@ -59,7 +58,7 @@ namespace YouRoomConsoleSample
             if (entryWithPictureAttachment == null)
                 return;
 
-            using (var stream = client.ShowAttachmentAsync(entryWithPictureAttachment.Participation.Group.ToParam, entryWithPictureAttachment.Id).Result)
+            using (var stream = await client.ShowAttachmentAsync(entryWithPictureAttachment.Participation.Group.ToParam, entryWithPictureAttachment.Id, true))
             {
                 int count = 0;
 
