@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+
+<!-- Copy this file as app.config, and populate ConsumerKey and ConsumerSecret with your own -->
+
+<configuration>
+  <startup>
+    <supportedRuntime version="v4.0" sku=".NETFramework,Version=v4.5.2" />
+  </startup>
+  <appSettings>
+    <add key="ConsumerKey" value="" />
+    <add key="ConsumerSecret" value="" />
+  </appSettings>
+</configuration>
