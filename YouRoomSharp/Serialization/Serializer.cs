@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Xml.Linq;
 using YouRoomSharp.Data;
@@ -16,15 +17,15 @@ namespace YouRoomSharp.Serialization
             return
                 new Entry()
                 {
-                    Id = element.Element("id").AsInt(),
-                    Content = element.Element("content").AsString(),
-                    CreatedAt = element.Element("created-at").AsDateTimeOffset(),
-                    UpdatedAt = element.Element("updated-at").AsDateTimeOffset(),
-                    ParentId = element.Element("parent-id").AsNullableInt(),
-                    DesdescendantsCount = element.Element("descendants-count").AsInt(),
-                    RootId = element.Element("root-id").AsInt(),
-                    CanUpdate = element.Element("can-update").AsBool(),
-                    HasRead = element.Element("has-read").AsBool(),
+                    Id = element.GetInt("id"),
+                    Content = element.GetString("content"),
+                    CreatedAt = element.GetDateTimeOffset("created-at"),
+                    UpdatedAt = element.GetDateTimeOffset("updated-at"),
+                    ParentId = element.GetNullableInt("parent-id"),
+                    RootId = element.GetInt("root-id"),
+                    DescendantsCount = element.GetNullableInt("descendants-count"),
+                    CanUpdate = element.GetNullableBool("can-update"),
+                    HasRead = element.GetNullableBool("has-read"),
                     Participation = element.Element("participation").ToParticipation(),
                     Attachment = element.Element("attachment")?.ToAttachement(),
                     Children =
@@ -41,21 +42,13 @@ namespace YouRoomSharp.Serialization
             return
                 new Participation()
                 {
-                    Id = element.Element("id").AsInt(),
-                    Name = element.Element("name").AsString(),
-                    Group = element.Element("group").ToParticipationGroup()
-                };
-        }
-
-        public static ParticipationGroup ToParticipationGroup(this XElement element)
-        {
-            Assert.IsNotNull(element, nameof(element));
-
-            return
-                new ParticipationGroup()
-                {
-                    Name = element.Element("name").AsString(),
-                    ToParam = element.Element("to-param").AsInt()
+                    Id = element.GetInt("id"),
+                    Name = element.GetString("name"),
+                    Group = element.Element("group")?.ToGroup(),
+                    Admin = element.GetNullableBool("admin"),
+                    CreatedAt = element.GetNullableDateTimeOffset("created-at"),
+                    UpdatedAt = element.GetNullableDateTimeOffset("updated-at"),
+                    Status = element.GetString("status")
                 };
         }
 
@@ -66,13 +59,13 @@ namespace YouRoomSharp.Serialization
             return
                 new Group()
                 {
-                    Id = element.Element("id").AsInt(),
-                    Name = element.Element("name").AsString(),
-                    CreatedAt = element.Element("created-at").AsDateTimeOffset(),
-                    UpdatedAt = element.Element("updated-at").AsDateTimeOffset(),
-                    Opened = element.Element("opened").AsBool(),
-                    ToParam = element.Element("to-param").AsInt(),
-                    IsExpired = element.Element("is-expired").AsBool()
+                    Name = element.GetString("name"),
+                    ToParam = element.GetInt("to-param"),
+                    Id = element.GetNullableInt("id"),
+                    CreatedAt = element.GetNullableDateTimeOffset("created-at"),
+                    UpdatedAt = element.GetNullableDateTimeOffset("updated-at"),
+                    Opened = element.GetNullableBool("opened"),
+                    IsExpired = element.GetNullableBool("is-expired")
                 };
         }
 
@@ -83,11 +76,11 @@ namespace YouRoomSharp.Serialization
             return
                 new Attachment()
                 {
-                    ContentType = element.Element("content-type").AsNullableString(),
-                    AttachementType = element.Element("attachment-type").AsEnum<AttachmentType>(),
-                    FileName = element.Element("filename").AsNullableString(),
-                    OriginalFileName = element.Element("original-filename").AsNullableString(),
-                    Url = element.Element("data-psych").Element("url")?.AsUri()
+                    ContentType = element.GetString("content-type"),
+                    AttachementType = element.GetEnum<AttachmentType>("attachment-type"),
+                    FileName = element.GetString("filename"),
+                    OriginalFileName = element.GetString("original-filename"),
+                    Url = element.Element("data-psych").GetUri("url")
                 };
         }
     }

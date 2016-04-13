@@ -3,104 +3,79 @@ using System.Xml.Linq;
 
 namespace YouRoomSharp.Serialization
 {
-    public static class XElementExtension
+    internal static class XElementExtension
     {
-        public static int? AsNullableInt(this XElement element)
+        private static T? GetNullable<T>(this XElement element, string name, Func<string, T> parse) where T : struct
         {
-            Assert.IsNotNull(element, nameof(element));
+            XElement child = element.Element(name);
 
+            if (child == null || child.Attribute("nil")?.Value == "true")
+                return null;
+
+            return parse(child.Value);
+        }
+
+        internal static int GetInt(this XElement element, string name)
+        {
+            return int.Parse(element.Element(name).Value);
+        }
+
+        internal static int? GetNullableInt(this XElement element, string name)
+        {
             return
-                !string.IsNullOrEmpty(element.Value)
-                ? (int?) int.Parse(element.Value)
-                : null;
+                element.GetNullable(
+                    name,
+                    (value) => int.Parse(value));
         }
 
-        public static int AsInt(this XElement element)
+        internal static string GetString(this XElement element, string name)
         {
-            Assert.IsNotNull(element, nameof(element));
-            Assert.IsNotNull(element.Value, nameof(element.Value));
-            return element.AsNullableInt().Value;
+            return element.Element(name)?.Value;
         }
 
-        public static string AsNullableString(this XElement element)
+        internal static DateTimeOffset GetDateTimeOffset(this XElement element, string name)
         {
-            Assert.IsNotNull(element, nameof(element));
-            return element.Value;
+            return DateTimeOffset.Parse(element.Element(name).Value);
         }
 
-        public static string AsString(this XElement element)
+        internal static DateTimeOffset? GetNullableDateTimeOffset(this XElement element, string name)
         {
-            Assert.IsNotNull(element, nameof(element));
-            Assert.IsNotNull(element.Value, nameof(element.Value));
-            return element.Value;
-        }
-
-        public static DateTimeOffset? AsNullableDateTimeOffset(this XElement element)
-        {
-            Assert.IsNotNull(element, nameof(element));
-
             return
-                !string.IsNullOrEmpty(element.Value)
-                ? (DateTimeOffset?) DateTimeOffset.Parse(element.Value)
-                : null;
+                element.GetNullable(
+                    name,
+                    (value) => DateTimeOffset.Parse(value));
         }
 
-        public static DateTimeOffset AsDateTimeOffset(this XElement element)
+        internal static bool GetBool(this XElement element, string name)
         {
-            Assert.IsNotNull(element, nameof(element));
-            Assert.IsNotNull(element.Value, nameof(element.Value));
-            return element.AsNullableDateTimeOffset().Value;
+            return bool.Parse(element.Element(name).Value);
         }
 
-        public static bool? AsNullableBool(this XElement element)
+        internal static bool? GetNullableBool(this XElement element, string name)
         {
-            Assert.IsNotNull(element, nameof(element));
-
             return
-                !string.IsNullOrEmpty(element.Value)
-                ? (bool?) bool.Parse(element.Value)
-                : null;
+                element.GetNullable(
+                    name,
+                    (value) => bool.Parse(value));
         }
 
-        public static bool AsBool(this XElement element)
+        internal static T GetEnum<T>(this XElement element, string name) where T : struct
         {
-            Assert.IsNotNull(element, nameof(element));
-            Assert.IsNotNull(element.Value, nameof(element.Value));
-            return element.AsNullableBool().Value;
+            return (T)Enum.Parse(typeof(T), element.Element(name).Value);
         }
 
-        public static T? AsNullableEnum<T>(this XElement element) where T : struct
+        public static T? GetNullableEnum<T>(this XElement element, string name) where T : struct
         {
-            Assert.IsNotNull(element, nameof(element));
-
             return
-                !string.IsNullOrEmpty(element.Value)
-                ? (T?)Enum.Parse(typeof(T), element.Value, true)
-                : null;
+                element.GetNullable(
+                    name,
+                    (value => (T)Enum.Parse(typeof(T), element.Element(name).Value)));
         }
 
-        public static T AsEnum<T>(this XElement element) where T: struct
+        public static Uri GetUri(this XElement element, string name)
         {
-            Assert.IsNotNull(element, nameof(element));
-            Assert.IsNotNull(element.Value, nameof(element.Value));
-            return element.AsNullableEnum<T>().Value;
-        }
-
-        public static Uri AsNullableUri(this XElement element)
-        {
-            Assert.IsNotNull(element, nameof(element));
-
-            return
-                !string.IsNullOrEmpty(element.Value)
-                ? new Uri(element.Value)
-                : null;
-        }
-
-        public static Uri AsUri(this XElement element)
-        {
-            Assert.IsNotNull(element, nameof(element));
-            Assert.IsNotNull(element.Value, nameof(element.Value));
-            return element.AsNullableUri();
+            XElement value = element.Element(name);
+            return value != null ? new Uri(element.Element(name).Value) : null;
         }
     }
 }

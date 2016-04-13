@@ -10,13 +10,21 @@ namespace YouRoomSharp.Data
         public DateTimeOffset UpdatedAt { get; set; }
         public int? ParentId { get; set; }
         public int RootId { get; set; }
-        public int DesdescendantsCount { get; set; }
-        public bool CanUpdate { get; set; }
-        public bool HasRead { get; set; }
         public Participation Participation { get; set; }
+
+        public int? DescendantsCount { get; set; }
+        public bool? CanUpdate { get; set; }
+        public bool? HasRead { get; set; }
         public Attachment Attachment { get; set; }
         public Entry[] Children { get; set; }
 
+        public bool HasParent
+        {
+            get
+            {
+                return ParentId.HasValue;
+            }
+        }
         public bool HasChildren
         {
             get

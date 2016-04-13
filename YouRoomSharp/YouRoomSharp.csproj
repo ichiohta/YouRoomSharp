@@ -39,7 +39,6 @@
     <Compile Include="Data\Entry.cs" />
     <Compile Include="Data\Group.cs" />
     <Compile Include="Data\Participation.cs" />
-    <Compile Include="Data\ParticipationGroup.cs" />
     <Compile Include="DateTimeOffsetExtension.cs" />
     <Compile Include="QueryParamSetHelper.cs" />
     <Compile Include="Serialization\Serializer.cs" />

@@ -53,7 +53,7 @@ namespace YouRoomConsoleSample
 
             var entryWithPictureAttachment =
                 roomEntries
-                    .First(e => e.Attachment?.AttachementType == AttachmentType.Image);
+                    .FirstOrDefault(e => e.Attachment?.AttachementType == AttachmentType.Image);
 
             if (entryWithPictureAttachment == null)
                 return;
