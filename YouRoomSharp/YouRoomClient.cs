@@ -117,7 +117,7 @@ namespace YouRoomSharp
 
             string queryString =
                 new Dictionary<string, string>()
-                    .AddWhen(original.HasValue && original.Value, "original", original.ToString())
+                    .AddOrUpdateWhen(original.HasValue && original.Value, "original", original.ToString())
                     .ToQueryString();
 
             return
@@ -133,12 +133,43 @@ namespace YouRoomSharp
 
         #region Entry
 
+        public async Task<Entry> CreateEntryAsync(string content, int groupParam, int? parentId = null)
+        {
+            // Empty string can be a valid content
+            Assert.IsNotNull(content, nameof(content));
+
+            HttpContent parameters =
+                NewParamSet()
+                    .AddOrUpdate("entry[content]", content)
+                    .AddOrUpdateWhen(parentId.HasValue, "entry[parent_id]", parentId.ToString())
+                    .ToFormUrlEncodedContent();
+
+            return
+                await SendPostRequest(
+                    $"https://www.youroom.in/r/{groupParam}/entries/",
+                    parameters,
+                    (document) =>
+                        new Entry());
+        }
+
         public async Task<Entry> ShowEntryAsync(int groupParam, int entryId)
         {
             AssertAuthorized();
 
             return
-                await GetXmlAsync(
+                await SendGetRequest(
+                    $"https://www.youroom.in/r/{groupParam}/entries/{entryId}/?format=xml",
+                    (document) =>
+                        document.Root
+                            .ToEntry());
+        }
+
+        public async Task<Entry> DestroyEntryAsync(int groupParam, int entryId)
+        {
+            AssertAuthorized();
+
+            return
+                await SendDeleteRequest(
                     $"https://www.youroom.in/r/{groupParam}/entries/{entryId}/?format=xml",
                     (document) =>
                         document.Root
@@ -154,7 +185,7 @@ namespace YouRoomSharp
             AssertAuthorized();
 
             return
-                await GetXmlAsync(
+                await SendGetRequest(
                     "https://www.youroom.in/groups/my/?format=xml",
                     (document) =>
                         document.Root
@@ -172,14 +203,14 @@ namespace YouRoomSharp
 
             string queryString =
                 NewParamSet()
-                    .AddWhen(since.HasValue, "since", since?.ToRfc3339DateFormat())
-                    .AddWhen(flat.HasValue && flat.Value, "flat", flat.ToString())
-                    .AddWhen(unreadOnly.HasValue && unreadOnly.Value, "read_state", "unread")
-                    .AddWhen(page.HasValue, "page", page.ToString())
+                    .AddOrUpdateWhen(since.HasValue, "since", since?.ToRfc3339DateFormat())
+                    .AddOrUpdateWhen(flat.HasValue && flat.Value, "flat", flat.ToString())
+                    .AddOrUpdateWhen(unreadOnly.HasValue && unreadOnly.Value, "read_state", "unread")
+                    .AddOrUpdateWhen(page.HasValue, "page", page.ToString())
                     .ToQueryString();
 
             return
-                await GetXmlAsync(
+                await SendGetRequest(
                     "https://www.youroom.in/?" + queryString,
                     (document) =>
                         document.Root
@@ -193,15 +224,15 @@ namespace YouRoomSharp
 
             string queryString =
                 NewParamSet()
-                    .AddWhen(since.HasValue, "since", since?.ToRfc3339DateFormat())
-                    .AddWhen(!string.IsNullOrEmpty(searchQuery), "search_query", searchQuery)
-                    .AddWhen(flat.HasValue && flat.Value, "flat", flat.ToString())
-                    .AddWhen(unreadOnly.HasValue && unreadOnly.Value, "read_state", "unread")
-                    .AddWhen(page.HasValue, "page", page.ToString())
+                    .AddOrUpdateWhen(since.HasValue, "since", since?.ToRfc3339DateFormat())
+                    .AddOrUpdateWhen(!string.IsNullOrEmpty(searchQuery), "search_query", searchQuery)
+                    .AddOrUpdateWhen(flat.HasValue && flat.Value, "flat", flat.ToString())
+                    .AddOrUpdateWhen(unreadOnly.HasValue && unreadOnly.Value, "read_state", "unread")
+                    .AddOrUpdateWhen(page.HasValue, "page", page.ToString())
                     .ToQueryString();
 
             return
-                await GetXmlAsync(
+                await SendGetRequest(
                     $"https://www.youroom.in/r/{groupParam}/?" + queryString,
                     (document) =>
                         document.Root
@@ -227,15 +258,49 @@ namespace YouRoomSharp
             return OAuthUtility.CreateOAuthClient(consumerKey, consumerSecret, accessToken);
         }
 
-        private async Task<T> GetXmlAsync<T>(string uri, Func<XDocument, T> action)
+        private async Task<T> SendRequest<T>(HttpMethod method, string uri, HttpContent content, Func<XDocument, T> action)
         {
-            using (var client = CreateHttpClient())
-            using (Stream stream = await client.GetStreamAsync(uri))
+            Func<HttpClient, Task<HttpResponseMessage>> send;
+
+            if (method == HttpMethod.Get)
+                send = (cl) => cl.GetAsync(uri);
+            else if (method == HttpMethod.Post)
+                send = (cl) => cl.PostAsync(uri, content);
+            else if (method == HttpMethod.Put)
+                send = (cl) => cl.PutAsync(uri, content);
+            else if (method == HttpMethod.Delete)
+                send = (cl) => cl.DeleteAsync(uri);
+            else
+                throw new ArgumentException(nameof(method));
+
+            using (HttpClient client = CreateHttpClient())
+            using (HttpResponseMessage response = await send(client))
+            using (Stream stream = await response.Content.ReadAsStreamAsync())
             using (XmlReader reader = XmlReader.Create(stream))
             {
                 XDocument document = XDocument.Load(reader);
                 return action(document);
             }
+        }
+
+        private Task<T> SendGetRequest<T>(string uri, Func<XDocument, T> action)
+        {
+            return SendRequest<T>(HttpMethod.Get, uri, null, action);
+        }
+
+        private Task<T> SendPostRequest<T>(string uri, HttpContent content, Func<XDocument, T> action)
+        {
+            return SendRequest<T>(HttpMethod.Post, uri, content, action);
+        }
+
+        private Task<T> SendPutRequest<T>(string uri, HttpContent content, Func<XDocument, T> action)
+        {
+            return SendRequest<T>(HttpMethod.Put, uri, content, action);
+        }
+
+        private Task<T> SendDeleteRequest<T>(string uri, Func<XDocument, T> action)
+        {
+            return SendRequest<T>(HttpMethod.Delete, uri, null, action);
         }
 
         private IDictionary<string, string> NewParamSet()
