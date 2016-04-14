@@ -34,7 +34,9 @@ namespace YouRoomSharp
                 { "oauth_callback", "oob" }
             };
 
-        #endregion
+        private static readonly HttpContent NoContent = null;
+
+        #endregion  
 
         #region Internal mutable fields
 
@@ -145,7 +147,8 @@ namespace YouRoomSharp
                     .ToFormUrlEncodedContent();
 
             return
-                await SendPostRequest(
+                await SendRequest(
+                    HttpMethod.Post,
                     $"https://www.youroom.in/r/{groupParam}/entries/",
                     parameters,
                     (document) =>
@@ -157,8 +160,10 @@ namespace YouRoomSharp
             AssertAuthorized();
 
             return
-                await SendGetRequest(
+                await SendRequest(
+                    HttpMethod.Get,
                     $"https://www.youroom.in/r/{groupParam}/entries/{entryId}/?format=xml",
+                    NoContent,
                     (document) =>
                         document.Root
                             .ToEntry());
@@ -169,8 +174,10 @@ namespace YouRoomSharp
             AssertAuthorized();
 
             return
-                await SendDeleteRequest(
+                await SendRequest(
+                    HttpMethod.Delete,
                     $"https://www.youroom.in/r/{groupParam}/entries/{entryId}/?format=xml",
+                    NoContent,
                     (document) =>
                         document.Root
                             .ToEntry());
@@ -185,8 +192,10 @@ namespace YouRoomSharp
             AssertAuthorized();
 
             return
-                await SendGetRequest(
+                await SendRequest(
+                    HttpMethod.Get,
                     "https://www.youroom.in/groups/my/?format=xml",
+                    NoContent,
                     (document) =>
                         document.Root
                             .Elements("group")
@@ -210,8 +219,10 @@ namespace YouRoomSharp
                     .ToQueryString();
 
             return
-                await SendGetRequest(
+                await SendRequest(
+                    HttpMethod.Get,
                     "https://www.youroom.in/?" + queryString,
+                    NoContent,
                     (document) =>
                         document.Root
                             .Elements("entry")
@@ -232,8 +243,10 @@ namespace YouRoomSharp
                     .ToQueryString();
 
             return
-                await SendGetRequest(
+                await SendRequest(
+                    HttpMethod.Get,
                     $"https://www.youroom.in/r/{groupParam}/?" + queryString,
+                    NoContent,
                     (document) =>
                         document.Root
                             .Elements("entry")
@@ -281,26 +294,6 @@ namespace YouRoomSharp
                 XDocument document = XDocument.Load(reader);
                 return action(document);
             }
-        }
-
-        private Task<T> SendGetRequest<T>(string uri, Func<XDocument, T> action)
-        {
-            return SendRequest<T>(HttpMethod.Get, uri, null, action);
-        }
-
-        private Task<T> SendPostRequest<T>(string uri, HttpContent content, Func<XDocument, T> action)
-        {
-            return SendRequest<T>(HttpMethod.Post, uri, content, action);
-        }
-
-        private Task<T> SendPutRequest<T>(string uri, HttpContent content, Func<XDocument, T> action)
-        {
-            return SendRequest<T>(HttpMethod.Put, uri, content, action);
-        }
-
-        private Task<T> SendDeleteRequest<T>(string uri, Func<XDocument, T> action)
-        {
-            return SendRequest<T>(HttpMethod.Delete, uri, null, action);
         }
 
         private IDictionary<string, string> NewParamSet()
