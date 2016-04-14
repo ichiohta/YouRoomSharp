@@ -135,7 +135,7 @@ namespace YouRoomSharp
 
         #region Entry
 
-        public async Task<Entry> CreateEntryAsync(string content, int groupParam, int? parentId = null)
+        public async Task<Entry> CreateEntryAsync(int groupParam, string content, int? parentId = null)
         {
             // Empty string can be a valid content
             Assert.IsNotNull(content, nameof(content));
@@ -149,10 +149,11 @@ namespace YouRoomSharp
             return
                 await SendRequest(
                     HttpMethod.Post,
-                    $"https://www.youroom.in/r/{groupParam}/entries/",
+                    $"https://www.youroom.in/r/{groupParam}/entries",
                     parameters,
                     (document) =>
-                        new Entry());
+                        document.Root
+                            .ToEntry());
         }
 
         public async Task<Entry> ShowEntryAsync(int groupParam, int entryId)
@@ -162,7 +163,7 @@ namespace YouRoomSharp
             return
                 await SendRequest(
                     HttpMethod.Get,
-                    $"https://www.youroom.in/r/{groupParam}/entries/{entryId}/?format=xml",
+                    $"https://www.youroom.in/r/{groupParam}/entries/{entryId}?format=xml",
                     NoContent,
                     (document) =>
                         document.Root
